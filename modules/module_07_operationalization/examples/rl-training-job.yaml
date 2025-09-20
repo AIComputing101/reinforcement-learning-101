@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dqn-training-job
+spec:
+  parallelism: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: rl-trainer
+        image: your-registry/rl-trainer:latest
+        resources:
+          requests:
+            nvidia.com/gpu: 1
+            memory: "8Gi"
+            cpu: "4"
+          limits:
+            nvidia.com/gpu: 1
+            memory: "16Gi"
+            cpu: "8"
+        env:
+        - name: WORKER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: TOTAL_WORKERS
+          value: "4"
+        volumeMounts:
+        - name: model-storage
+          mountPath: /models
+        - name: data-storage
+          mountPath: /data
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: model-pvc
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: data-pvc

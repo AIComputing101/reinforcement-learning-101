@@ -1,0 +1,14 @@
+# Core runtime
+numpy>=1.24
+rich>=13.7
+
+# Environments
+gymnasium[classic-control]>=1.0
+
+# Deep learning (CPU by default; CUDA/ROCm handled in Dockerfiles)
+# Note: PyTorch wheels for Python 3.13 may not be available on PyPI yet.
+# Make it conditional to avoid install failures on 3.13.
+torch>=2.3; python_version < '3.13'
+
+# Optional tools for logging/metrics
+tensorboard>=2.16

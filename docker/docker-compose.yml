@@ -1,0 +1,39 @@
+services:
+  drl-cpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cpu
+    container_name: drl-cpu
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
+    volumes:
+      - ..:/workspace
+  drl-cuda:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cuda
+    container_name: drl-cuda
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
+    volumes:
+      - ..:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+  drl-rocm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.rocm
+    container_name: drl-rocm
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
+    volumes:
+      - ..:/workspace
+    devices:
+      - "/dev/kfd:/dev/kfd"
+      - "/dev/dri:/dev/dri"
