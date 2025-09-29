@@ -1,24 +1,102 @@
 # Module 02: Value Methods (Q-Learning, DQN)
 
 ## Overview
-Learn value functions and Bellman equations, implement tabular Q‑learning, and understand DQN with core stabilization tricks and common extensions.
+Value-based reinforcement learning methods learn to estimate the expected future rewards of states or state-action pairs, enabling optimal decision making through value function optimization. This module covers the theoretical foundations, practical implementations, and modern deep learning extensions of value methods.
+
 ## Learning Objectives
-- Define value functions and Bellman equations
-- Implement tabular Q‑learning on CartPole (discretized)
-- Understand DQN stabilization (target net, replay, ε‑greedy)
-- Recognize DQN variants (Double, Dueling, PER, Rainbow)
+- Define value functions and understand the Bellman equations
+- Implement tabular Q-learning for discrete environments
+- Master Deep Q-Network (DQN) with stabilization techniques
+- Recognize advanced DQN variants and their improvements
+- Apply value methods to real-world control problems
+
 ## Key Concepts
-- Bellman expectation: `V^π(s) = E[r + γ V^π(s')]`
-- Bellman optimality: `Q*(s,a) = E[r + γ max_{a'} Q*(s',a')]`
+
+### Value Functions: The Foundation of Value-Based RL
+Value functions estimate **how good** it is to be in a particular state (or take a particular action in a state):
+
+#### State Value Function V^π(s)
+**Definition**: Expected cumulative reward from state `s` following policy `π`
+```
+V^π(s) = E_π[G_t | S_t = s] = E_π[∑_{k=0}^∞ γ^k R_{t+k+1} | S_t = s]
+```
+**Intuition**: "How valuable is this state under my current strategy?"
+
+#### Action-Value Function Q^π(s,a)
+**Definition**: Expected cumulative reward from taking action `a` in state `s`, then following policy `π`
+```
+Q^π(s,a) = E_π[G_t | S_t = s, A_t = a]
+```
+**Intuition**: "How valuable is this action in this state?"
+
+### Bellman Equations: The Recursive Structure
+The Bellman equations express the recursive relationship between values:
+
+#### Bellman Expectation Equations
+- **State values**: `V^π(s) = E_π[R_{t+1} + γ V^π(S_{t+1}) | S_t = s]`
+- **Action values**: `Q^π(s,a) = E[R_{t+1} + γ E_π[V^π(S_{t+1})] | S_t = s, A_t = a]`
+
+#### Bellman Optimality Equations
+- **Optimal state values**: `V*(s) = max_a Q*(s,a) = max_a E[R_{t+1} + γ V*(S_{t+1}) | S_t = s, A_t = a]`
+- **Optimal action values**: `Q*(s,a) = E[R_{t+1} + γ max_{a'} Q*(S_{t+1}, a') | S_t = s, A_t = a]`
+
+**Why Bellman Equations Matter:**
+- **Decompose complex problems** into simpler subproblems
+- **Enable iterative solutions** through dynamic programming
+- **Guarantee convergence** to optimal values under certain conditions
+- **Foundation for temporal difference learning**
+
+## 🎯 Q-Learning: Learning Optimal Action Values
+
+### Tabular Q-Learning Algorithm
+Q-Learning directly learns the optimal action-value function Q*(s,a) without needing a model of the environment:
+
+```python
+# Initialize Q-table with zeros
+Q = np.zeros((num_states, num_actions))
+
+# For each episode:
+for episode in range(num_episodes):
+    state = env.reset()
+    while not done:
+        # Choose action using ε-greedy policy
+        action = epsilon_greedy(Q[state], epsilon)
+
+        # Take action, observe reward and next state
+        next_state, reward, done = env.step(action)
+
+        # Q-Learning update
+        td_target = reward + gamma * np.max(Q[next_state])
+        td_error = td_target - Q[state, action]
+        Q[state, action] += alpha * td_error
+
+        state = next_state
+```
+
+**Key Properties:**
+- **Off-policy**: Learns optimal Q* regardless of behavior policy
+- **Model-free**: No need to know transition probabilities
+- **Guaranteed convergence**: Under tabular conditions with proper exploration
+
+## 🧠 Deep Q-Networks (DQN): Scaling to Complex Domains
+
+When state spaces become too large for tables, we use neural networks to approximate Q-functions.
+
+### Core DQN Stabilization Techniques
+
+#### 1. Experience Replay
+Store and randomly sample experiences to break temporal correlations:
+
+```python
 # Sample random batch for learning
 batch = replay_buffer.sample(batch_size)
 # Breaks correlation between consecutive samples!
 ```
 
 **Why it helps**:
-- Breaks temporal correlations in data
-- More data-efficient (reuse experiences)
-- Stabilizes learning
+- **Breaks temporal correlations** in sequential data
+- **More data-efficient** through experience reuse
+- **Stabilizes learning** by providing diverse training samples
 
 #### 2. Target Network
 Use a separate, slowly-updated network for targets:

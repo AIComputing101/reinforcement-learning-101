@@ -1,19 +1,118 @@
 # Module 07: Operationalization & Deployment
 
 ## Overview
-Bridge research to production: distributed training, offline RL, serving with TorchServe, and robust monitoring in real environments.
+Operationalizing RL systems requires mastering the infrastructure, tooling, and practices that enable reliable deployment at scale. This module covers the complete MLOps lifecycle for RL: from distributed training and model serving to monitoring and continuous improvement. You'll learn the engineering practices that separate successful production RL from academic experiments.
 
 ## Learning Objectives
-- Run distributed RL on Kubernetes/Ray
-- Apply offline RL to fixed datasets
-- Serve RL policies with TorchServe (API‑oriented)
-- Monitor and operate RL systems in production
+- Design and implement distributed RL training systems using modern orchestration
+- Master offline RL techniques for learning from historical data safely
+- Deploy RL models as production APIs with proper versioning and rollback
+- Implement comprehensive monitoring, alerting, and debugging for RL systems
+- Understand the unique operational challenges of RL compared to supervised learning
 
-## Key Concepts
-- Distributed training patterns (A3C, Ray)
-- Offline RL pitfalls (distribution shift, CQL)
-- Model serving concerns (latency, versioning, rollback)
-- Monitoring: RL metrics, alerting, continuous learning
+## 🏗️ RL Production Infrastructure
+
+### Distributed Training Architecture
+**Why Distribute RL Training?**
+- **Sample collection**: Parallel environment rollouts speed up data gathering
+- **Computation**: Large neural networks require distributed compute
+- **Exploration**: Multiple workers can explore different parts of state space
+
+#### Key Patterns:
+1. **Asynchronous Actor-Critic (A3C)**: Workers independently update shared parameters
+2. **Synchronous Training**: Collect batches from multiple workers, update in sync
+3. **Parameter Servers**: Centralized parameter storage with distributed workers
+4. **Ray RLlib**: Modern distributed RL framework with fault tolerance
+
+```python
+# Ray RLlib distributed training example
+import ray
+from ray import tune
+
+config = {
+    "env": "CartPole-v1",
+    "num_workers": 8,  # Parallel rollout workers
+    "num_gpus": 1,     # GPUs for neural network training
+    "train_batch_size": 4000,
+}
+
+tune.run("PPO", config=config)
+```
+
+### Model Serving & Deployment
+**RL-Specific Serving Challenges**:
+- **Stateful policies**: Some policies maintain internal state across actions
+- **Latency requirements**: Real-time decision making
+- **Action masking**: Invalid actions must be filtered in some environments
+- **Exploration vs exploitation**: Production policies are typically deterministic
+
+#### Serving Architecture:
+```python
+# FastAPI serving example
+from fastapi import FastAPI
+import torch
+
+app = FastAPI()
+model = torch.jit.load("policy_model.pt")
+
+@app.post("/action")
+def get_action(state: Dict):
+    with torch.no_grad():
+        state_tensor = preprocess(state)
+        action_probs = model(state_tensor)
+        action = torch.argmax(action_probs).item()
+    return {"action": action, "confidence": float(torch.max(action_probs))}
+```
+
+## 📊 Monitoring & Observability
+
+### RL-Specific Metrics
+Unlike supervised learning, RL requires monitoring the **closed-loop system**:
+
+#### Performance Metrics:
+- **Episode rewards**: Primary success metric
+- **Episode length**: Efficiency of learned behavior
+- **Success rate**: Task completion percentage
+- **Policy entropy**: Exploration vs exploitation balance
+
+#### System Health Metrics:
+- **Sample efficiency**: Rewards per environment step
+- **Training stability**: Value function loss, policy updates
+- **Distribution shift**: How much the data distribution changes
+- **Action distribution**: Are policies becoming too deterministic?
+
+#### Business Metrics:
+- **ROI**: Revenue impact of RL vs baseline
+- **User engagement**: Click-through rates, session length
+- **Operational costs**: Energy usage, compute resources
+- **Safety violations**: Constraint violations, fallback usage
+
+### Continuous Learning & Model Updates
+**Challenge**: RL policies can degrade as environments change
+**Solutions**:
+- **Online learning**: Continuously update policies with new data
+- **Periodic retraining**: Retrain on fresh data at regular intervals
+- **Distribution monitoring**: Detect when environment shifts occur
+- **Gradual rollouts**: Test new policies on small traffic percentages
+
+## 🔒 Safety & Risk Management
+
+### Safe Deployment Patterns
+1. **Shadow mode**: Run RL policy alongside production system, compare decisions
+2. **Canary deployments**: Gradually increase traffic to new policy
+3. **Fallback systems**: Always have a safe baseline to fall back to
+4. **Human oversight**: Allow human operators to override RL decisions
+
+### Offline RL for Safe Learning
+**Problem**: Online learning can be risky in production
+**Solution**: Learn from logged historical data
+
+**Conservative Q-Learning (CQL)** prevents overestimation on out-of-distribution actions:
+```python
+# Penalize Q-values for actions not seen in dataset
+cql_loss = α * (Q_values.logsumexp(dim=-1) - Q_dataset.mean())
+total_loss = bellman_loss + cql_loss
+```
 
 ## Run the Examples
 ```bash

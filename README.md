@@ -1,6 +1,6 @@
 # Reinforcement Learning 101
 
-**Progressive, Hands‑On Reinforcement Learning Curriculum (CLI-First)**  
+**Progressive, Hands‑On Reinforcement Learning Project (CLI-First)**  
 Built for clarity, reproducibility, and production awareness.
 
 ![python](https://img.shields.io/badge/python-3.11%20|%203.12-blue)
@@ -8,7 +8,7 @@ Built for clarity, reproducibility, and production awareness.
 ![logging](https://img.shields.io/badge/logging-rich%20console-purple)
 ![status](https://img.shields.io/badge/status-active-success)
 
-An opinionated, end‑to‑end tutorial curriculum for learning Reinforcement Learning (RL) from first principles to deployment. **No notebooks.** Everything is an explicit, inspectable Python script you can diff, profile, containerize, and ship.
+An opinionated, end‑to‑end tutorial project for learning Reinforcement Learning (RL) from first principles to deployment. **No notebooks.** Everything is an explicit, inspectable Python script you can diff, profile, containerize, and ship.
 
 ---
 
@@ -223,7 +223,7 @@ Licensed under the **Apache License, Version 2.0** (see `LICENSE`). You may use,
 If this helped your study or project, consider citing:
 ```
 @misc{rl101tutorial,
-	title  = {Reinforcement Learning 101: A Progressive Hands-On Curriculum},
+	title  = {Reinforcement Learning 101: A Progressive Hands-On Project},
     author = {Stephen Shao}
 	year   = {2025},
 	howpublished = {GitHub repository},
