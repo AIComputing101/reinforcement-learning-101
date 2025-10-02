@@ -107,20 +107,221 @@ Unlike supervised learning, RL requires monitoring the **closed-loop system**:
 **Problem**: Online learning can be risky in production
 **Solution**: Learn from logged historical data
 
-**Conservative Q-Learning (CQL)** prevents overestimation on out-of-distribution actions:
+#### Phase 3 Implementations
+
+**Conservative Q-Learning (CQL)** - Prevents overestimation on out-of-distribution actions:
 ```python
-# Penalize Q-values for actions not seen in dataset
-cql_loss = α * (Q_values.logsumexp(dim=-1) - Q_dataset.mean())
-total_loss = bellman_loss + cql_loss
+# CQL penalty: encourage lower Q-values for unseen actions
+logsumexp_q = torch.logsumexp(all_q_values, dim=1).mean()  # All actions
+dataset_q = q_values.mean()                                 # Dataset actions only
+cql_loss = logsumexp_q - dataset_q                         # Conservative penalty
+
+# Total loss with conservative penalty
+loss = bellman_loss + alpha * cql_loss
 ```
 
+**Implicit Q-Learning (IQL)** - Simpler approach using expectile regression:
+```python
+# 1. Update Q-network (standard Bellman backup)
+q_loss = MSE(Q(s,a), r + γ * V(s'))
+
+# 2. Update V-network (expectile regression - learns upper quantile)
+v_loss = expectile_loss(V(s) - Q(s, a_dataset), τ=0.7)
+
+# 3. Update policy (advantage-weighted behavioral cloning)
+advantage = Q(s,a) - V(s)
+weights = exp(advantage / β)
+policy_loss = -weights * log π(a|s)
+```
+
+**IQL vs CQL:**
+- **IQL**: Simpler, fewer hyperparameters, more stable
+- **CQL**: More explicit conservatism, better on very large datasets
+- **Both**: State-of-the-art offline RL (2024-2025)
+
+**Industry Applications:**
+- Autonomous Driving (Waymo): Learn from human driving logs
+- Healthcare: Learn treatment policies from patient records
+- Recommender Systems: Learn from user interaction logs
+- Robotics: Learn from teleoperation demonstrations
+
+### Model-Based RL: World Models
+
+**Problem**: Environment interaction is expensive
+**Solution**: Learn a world model, train policy in imagination
+
+**Dreamer Architecture** (inspired by DreamerV3):
+```python
+# 1. World Model Components
+encoder: observation → latent_state
+dynamics: (latent_state, action) → next_latent_state
+reward_predictor: latent_state → reward
+decoder: latent_state → observation  # For reconstruction
+
+# 2. Collect Real Data
+states, actions, rewards = collect_from_real_environment()
+
+# 3. Train World Model
+latent = encoder(observation)
+next_latent_pred, reward_pred = dynamics(latent, action)
+next_latent_true = encoder(next_observation)
+
+dynamics_loss = MSE(next_latent_pred, next_latent_true)
+reward_loss = MSE(reward_pred, reward)
+recon_loss = MSE(decoder(latent), observation)
+
+# 4. Imagine Future Trajectories (Dreaming)
+for horizon in range(H):
+    action = policy(latent)
+    latent, reward = dynamics(latent, action)  # No real environment!
+    imagined_rewards.append(reward)
+
+# 5. Train Policy on Imagined Data
+train_policy(imagined_rewards)  # Pure model-based learning
+```
+
+**Benefits:**
+- **Sample Efficiency**: Learn from fewer real interactions
+- **Planning**: Simulate futures without environment
+- **Transfer**: World model generalizes across tasks
+- **Safety**: Test policies in simulation first
+
+**Industry Examples:**
+- DeepMind: MuZero (board games), DreamerV3 (continuous control)
+- Google: Model-based planning for robotics
+- Tesla: World models for autonomous driving prediction
+
+### RLHF: Aligning Language Models
+
+**Problem**: Language models need to follow human preferences
+**Solution**: 3-stage RLHF pipeline
+
+**Stage 1: Supervised Fine-Tuning (SFT)**
+```python
+# Train on human demonstrations
+for demo in demonstrations:
+    tokens = tokenize(demo)
+    loss = CrossEntropy(model(tokens[:-1]), tokens[1:])  # Next token prediction
+```
+
+**Stage 2: Reward Model Training**
+```python
+# Learn from human preferences (A vs B comparisons)
+r_A = reward_model(text_A)
+r_B = reward_model(text_B)
+
+# Bradley-Terry model: P(B > A) = σ(r_B - r_A)
+loss = -log_sigmoid(r_preferred - r_rejected)
+```
+
+**Stage 3: PPO with KL Penalty**
+```python
+# Generate text with policy
+text = policy.generate(prompt)
+reward = reward_model(text)
+
+# KL penalty prevents reward hacking
+kl_penalty = KL(policy || reference_policy)
+final_reward = reward - β * kl_penalty
+
+# Optimize with PPO
+ppo_loss = PPO_objective(policy, final_reward)
+```
+
+**Why KL Penalty?**
+- Without: Policy exploits reward model (generates nonsense with high reward)
+- With: Policy stays close to reference (only conservative improvements)
+
+**Industry Examples:**
+- OpenAI: ChatGPT alignment
+- Anthropic: Claude Constitutional AI
+- Meta: LLaMA2-Chat
+- Google: Bard RLHF
+
 ## Run the Examples
+
+### Phase 3: Advanced Algorithms (2024-2025)
+
+**Offline RL - CQL (Conservative Q-Learning)**
+```bash
+# Generate offline dataset
+python modules/module_07_operationalization/examples/cql_offline_rl.py \
+    --mode generate --dataset-path data/cartpole_medium.pkl
+
+# Train CQL on offline dataset
+python modules/module_07_operationalization/examples/cql_offline_rl.py \
+    --mode train --dataset-path data/cartpole_medium.pkl
+
+# Compare CQL vs Behavioral Cloning
+python modules/module_07_operationalization/examples/cql_offline_rl.py \
+    --mode compare --dataset-path data/cartpole_medium.pkl
+```
+
+**Offline RL - IQL (Implicit Q-Learning)**
+```bash
+# Train IQL (simpler and more stable than CQL)
+python modules/module_07_operationalization/examples/iql_offline_rl.py \
+    --mode train --dataset-path data/cartpole_medium.pkl
+
+# Compare IQL vs CQL vs BC
+python modules/module_07_operationalization/examples/iql_offline_rl.py \
+    --mode compare --dataset-path data/cartpole_medium.pkl
+```
+
+**Model-Based RL - Dreamer**
+```bash
+# Train world model and policy (CartPole)
+python modules/module_07_operationalization/examples/dreamer_model_based.py \
+    --env CartPole-v1 --episodes 200
+
+# Continuous control (Pendulum)
+python modules/module_07_operationalization/examples/dreamer_model_based.py \
+    --env Pendulum-v1 --episodes 100 --imagine-horizon 20
+```
+
+**RLHF for Language Models**
+```bash
+# Train RLHF pipeline (educational character-level example)
+python modules/module_07_operationalization/examples/rlhf_text_generation.py \
+    --task sentiment --iterations 100
+```
+
+**Benchmark Suite**
+```bash
+# Compare algorithms on CartPole
+python modules/module_07_operationalization/examples/benchmark_suite.py \
+    --env CartPole-v1 --algorithms dqn ppo random --trials 5
+
+# Save results to JSON
+python modules/module_07_operationalization/examples/benchmark_suite.py \
+    --env CartPole-v1 --output results.json
+```
+
+### Phase 2: Infrastructure (Production-Ready)
+
+**Distributed Training with Ray RLlib**
+```bash
+# Distributed PPO training
+python modules/module_07_operationalization/examples/ray_distributed_ppo.py \
+    --num-workers 4 --iterations 100
+
+# With hyperparameter tuning
+python modules/module_07_operationalization/examples/ray_distributed_ppo.py \
+    --tune --num-samples 4
+```
+
+**Hyperparameter Tuning with Optuna**
+```bash
+# Automated hyperparameter optimization
+python modules/module_07_operationalization/examples/hyperparameter_tuning_optuna.py \
+    --n-trials 50 --n-jobs 4
+```
+
+### Legacy Examples
+
 ```bash
 # Kubernetes job (apply the Job manifest in the examples folder)
 kubectl apply -f modules/module_07_operationalization/examples/rl-training-job.yaml
-
-# Offline RL (stub)
-python modules/module_07_operationalization/examples/offline_rl_batch.py --dataset /data/d4rl_dataset.pkl --algorithm cql
 
 # TorchServe (handler/client demo)
 python modules/module_07_operationalization/examples/torchserve_inference.py --create-archive

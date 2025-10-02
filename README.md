@@ -18,6 +18,7 @@ An opinionated, end‑to‑end tutorial project for learning Reinforcement Learn
 3. [Quick Start](#3-quick-start)
 4. [Prerequisites](#4-prerequisites)
 5. [Module Path](#5-module-path-progressive-difficulty)
+   - [5.1 Algorithm Selection Guide](#51-algorithm-selection-guide---which-algorithm-should-i-use) ⭐ **NEW**
 6. [Project Layout](#6-project-layout)
 7. [Running Examples](#7-running-examples-more-highlights)
 8. [Environment & Reproducibility](#8-environment--reproducibility)
@@ -50,10 +51,13 @@ By completing all 7 modules you will be able to:
 * Implement and compare exploration strategies in multi‑armed bandits.
 * Derive and code tabular Q-Learning; extend to deep value methods (DQN family, Rainbow components).
 * Train policy gradient and REINFORCE baselines; reason about variance & baselines.
-* Build actor‑critic agents (A2C, SAC) and understand stability trade‑offs.
+* Build actor‑critic agents (A2C, **PPO**, **TD3**, SAC, TRPO) and understand stability trade‑offs.
+* Master **industry-standard algorithms** used in production (ChatGPT's RLHF uses PPO).
+* **Apply cutting-edge algorithms (2024-2025)**: Offline RL (CQL, IQL), Model-Based (Dreamer), RLHF for LLMs.
 * Experiment with advanced ideas (evolutionary strategies, curiosity, multi-agent coordination).
 * Apply RL framing to industry‑style scenarios (bidding, recommendation, energy control).
-* Package, serve, and batch‑evaluate trained agents (TorchServe, Offline RL, Kubernetes jobs).
+* Package, serve, and batch‑evaluate trained agents (TorchServe, Ray RLlib, Kubernetes jobs).
+* **Optimize training infrastructure**: GPU acceleration, distributed training, hyperparameter tuning.
 
 ## 3. Quick Start
 
@@ -80,7 +84,17 @@ pip install -r requirements/requirements-torch-cpu.txt
 
 **Verify installation:**
 ```bash
+# Run all tests (comprehensive)
 python scripts/smoke_test.py
+
+# Quick test - core examples only (no PyTorch)
+python scripts/smoke_test.py --core-only
+
+# Skip optional/slow tests
+python scripts/smoke_test.py --skip-optional
+
+# Test specific group
+python scripts/smoke_test.py --group deep-rl
 ```
 
 Run your first bandit:
@@ -109,12 +123,162 @@ python path/to/script.py --help
 | 01 Intro | Bandits | Epsilon-greedy, exploration vs exploitation | `bandit_epsilon_greedy.py --arms 10 --steps 2000` |
 | 02 Value Methods | Q / DQN / Rainbow | Replay, target nets, prioritized, distributional | `dqn_cartpole.py --episodes 400` |
 | 03 Policy Methods | REINFORCE / PG | Return estimation, baselines, continuous actions | `policy_gradient_pendulum.py --episodes 100` |
-| 04 Actor-Critic | A2C / SAC | Advantage estimates, entropy, stochastic policies | `a2c_lunarlander.py --episodes 300` |
+| 04 Actor-Critic | **PPO** / **TD3** / A2C / SAC / TRPO | Industry-standard algorithms, trust regions | `ppo_cartpole.py --episodes 100` ⭐ |
 | 05 Advanced RL | Evolution, Curiosity, Multi-agent | Exploration bonuses, population search | `evolutionary_cartpole.py --generations 5` |
 | 06 Industry Cases | Applied RL | Energy, bidding, recommendation framing | `realtime_bidding_qlearning.py --episodes 500` |
-| 07 Operationalization | Deployment & Offline | K8s jobs, TorchServe, batch eval | `offline_rl_batch.py --dataset path` |
+| 07 Operationalization | **Offline RL**, **RLHF**, Deployment | CQL, IQL, Dreamer, distributed training, TorchServe | `cql_offline_rl.py --mode compare` ⭐ **NEW** |
 
 Each module folder includes `content.md` (theory + checklist) and an `examples/` directory of runnable scripts.
+
+---
+
+## 5.1. Algorithm Selection Guide - Which Algorithm Should I Use?
+
+Use this decision tree to quickly find the right algorithm for your problem:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  What type of ACTION SPACE do you have?            │
+└──────────────────┬──────────────────────────────────┘
+                   │
+         ┌─────────┴─────────┐
+         │                   │
+    DISCRETE             CONTINUOUS
+    (e.g., 4 actions)    (e.g., torque, velocity)
+         │                   │
+         │                   │
+┌────────┴────────┐    ┌─────┴────────┐
+│                 │    │              │
+│  Do you have    │    │ Do you need  │
+│  offline data?  │    │ exploration? │
+│                 │    │              │
+└───┬─────────┬───┘    └───┬──────┬───┘
+    │         │            │      │
+   YES       NO           YES     NO
+    │         │            │      │
+    │         │            │      │
+    │    ┌────┴─────┐      │      │
+    │    │          │      │      │
+    │  On-Policy Off-Policy│      │
+    │    │          │      │      │
+    ▼    ▼          ▼      ▼      ▼
+  ┌─────────────────────────────────────────┐
+  │  RECOMMENDED ALGORITHMS                 │
+  ├─────────────────────────────────────────┤
+  │  Discrete + Offline    → CQL/IQL        │
+  │  Discrete + On-Policy  → PPO ⭐          │
+  │  Discrete + Off-Policy → DQN/Rainbow    │
+  │  Continuous + Explore  → SAC ⭐          │
+  │  Continuous + Exploit  → TD3 ⭐          │
+  │  Multi-Armed Bandits   → ε-Greedy       │
+  │  Model-Based          → DreamerV3       │
+  └─────────────────────────────────────────┘
+```
+
+### Quick Reference Table
+
+| Your Situation | Best Algorithm | File to Run | Why? |
+|----------------|----------------|-------------|------|
+| **Just starting RL** | PPO | `ppo_cartpole.py` | Most stable, widely used, fast training |
+| **Production deployment** | PPO or TD3 | `ppo_lunarlander.py` or `td3_pendulum.py` | Industry standards (ChatGPT uses PPO) |
+| **Continuous control (robotics)** | TD3 or SAC | `td3_pendulum.py` | State-of-the-art for continuous actions |
+| **Discrete actions (games)** | PPO or DQN | `ppo_cartpole.py` or `dqn_cartpole.py` | PPO for stability, DQN for sample efficiency |
+| **Limited data (offline RL)** | CQL or IQL | Module 07 examples | Learn from fixed datasets |
+| **Exploration needed** | SAC or Curiosity | `sac_robotic_arm.py` | Maximum entropy or intrinsic rewards |
+| **Sample efficiency critical** | Model-based (DreamerV3) | Future implementation | Learns world model, imagines trajectories |
+| **Learning the theory** | Start with Bandits → Q-Learning → Policy Gradient → PPO | Follow Module 01-04 | Progressive difficulty |
+
+### Algorithm Family Tree
+
+```
+Reinforcement Learning Algorithms
+│
+├── Value-Based (Learn Q(s,a))
+│   ├── Tabular
+│   │   └── Q-Learning ..................... Module 02
+│   └── Deep
+│       ├── DQN ............................ Module 02 ⭐
+│       ├── Double DQN ..................... Module 02
+│       ├── Dueling DQN .................... Module 02
+│       └── Rainbow DQN .................... Module 02
+│
+├── Policy-Based (Learn π(a|s))
+│   ├── REINFORCE .......................... Module 03
+│   ├── Policy Gradient .................... Module 03
+│   └── Evolutionary Strategies ............ Module 05
+│
+├── Actor-Critic (Learn both π and V/Q)
+│   ├── On-Policy
+│   │   ├── A2C ............................ Module 04
+│   │   ├── PPO ............................ Module 04 ⭐⭐⭐ [INDUSTRY STANDARD]
+│   │   └── TRPO ........................... Module 04
+│   └── Off-Policy
+│       ├── DDPG ........................... (TD3 is better)
+│       ├── TD3 ............................ Module 04 ⭐⭐⭐ [INDUSTRY STANDARD]
+│       └── SAC ............................ Module 04 ⭐⭐
+│
+├── Model-Based (Learn environment model)
+│   ├── DreamerV3 .......................... Module 07 ⭐⭐ **NEW**
+│   └── MuZero ............................. (Future)
+│
+├── Offline RL (Learn from fixed datasets)
+│   ├── CQL (Conservative Q-Learning) ...... Module 07 ⭐⭐⭐ **NEW**
+│   ├── IQL (Implicit Q-Learning) .......... Module 07 ⭐⭐⭐ **NEW**
+│   └── Behavioral Cloning ................. Module 07
+│
+└── Exploration & Advanced
+    ├── Multi-Armed Bandits ................ Module 01 ⭐ [START HERE]
+    ├── Curiosity-Driven ................... Module 05
+    ├── Multi-Agent ........................ Module 05
+    └── RLHF (for LLMs) .................... Module 07 ⭐⭐⭐ **NEW**
+
+⭐ = Beginner-friendly
+⭐⭐ = Production-ready
+⭐⭐⭐ = Industry standard (2024-2025)
+```
+
+### When to Use Each Algorithm (Practical Decision Guide)
+
+**Use PPO when:**
+- ✅ You want the safest, most reliable choice
+- ✅ You're deploying to production (ChatGPT, AlphaStar use this)
+- ✅ You have either discrete OR continuous actions
+- ✅ You can afford to collect fresh data for each update
+- ✅ Training stability > sample efficiency
+
+**Use TD3 when:**
+- ✅ You have continuous action spaces (robotics, control)
+- ✅ Sample efficiency matters (expensive simulations)
+- ✅ You can use a replay buffer (store past experiences)
+- ✅ You need deterministic policies
+- ✅ You're benchmarking against research papers
+
+**Use SAC when:**
+- ✅ You have continuous actions + need exploration
+- ✅ Maximum sample efficiency is critical
+- ✅ Environment is stochastic (benefits from entropy)
+- ✅ You want automatic temperature tuning
+- ✅ Robustness to hyperparameters is important
+
+**Use DQN when:**
+- ✅ You have discrete actions (simple games)
+- ✅ You want to learn from a replay buffer
+- ✅ You understand value-based methods
+- ✅ PPO is overkill for your simple problem
+
+**Use Multi-Armed Bandits when:**
+- ✅ You're just starting with RL (great introduction!)
+- ✅ You have a stateless decision problem
+- ✅ You need exploration strategies (ε-greedy, UCB)
+- ✅ A/B testing, recommendation systems
+
+**Use Model-Based (DreamerV3) when:**
+- ✅ Sample efficiency is CRITICAL (very expensive data)
+- ✅ You can learn an accurate world model
+- ✅ You want to plan ahead via imagination
+- ✅ You have access to GPU resources
+
+---
 
 ## 6. Project Layout
 ```
@@ -154,6 +318,26 @@ Industry & Ops:
 ```bash
 python modules/module_06_industry_cases/examples/energy_optimization_dqn.py --episodes 300
 python modules/module_07_operationalization/examples/torchserve_inference.py --model-path ./models/
+```
+
+**⭐ NEW: Advanced Algorithms (2024-2025)**
+```bash
+# Offline RL - Learn from fixed datasets (no environment interaction!)
+python modules/module_07_operationalization/examples/cql_offline_rl.py --mode compare --dataset-path data/cartpole.pkl
+python modules/module_07_operationalization/examples/iql_offline_rl.py --mode compare --dataset-path data/cartpole.pkl
+
+# Model-Based RL - Train policy in imagination
+python modules/module_07_operationalization/examples/dreamer_model_based.py --env CartPole-v1 --episodes 200
+
+# RLHF - Language model alignment (like ChatGPT)
+python modules/module_07_operationalization/examples/rlhf_text_generation.py --task sentiment --iterations 100
+
+# Infrastructure - Distributed training & hyperparameter tuning
+python modules/module_07_operationalization/examples/ray_distributed_ppo.py --num-workers 4
+python modules/module_07_operationalization/examples/hyperparameter_tuning_optuna.py --n-trials 50
+
+# Benchmark Suite - Compare algorithms
+python modules/module_07_operationalization/examples/benchmark_suite.py --env CartPole-v1 --algorithms dqn ppo
 ```
 
 Use smaller numbers (`--episodes 5`, `--generations 1`, tiny populations) for dry runs.
@@ -238,7 +422,28 @@ except ImportError:
 
 - Ship defaults that finish within minutes so contributors can iterate quickly.
 - Support tiny dry-run parameters (e.g., `--episodes 5`, `--generations 1`).
-- Run `python scripts/smoke_test.py` before commits touching shared code.
+- Run smoke tests before commits touching shared code:
+
+```bash
+# Run all tests (comprehensive)
+python scripts/smoke_test.py
+
+# Quick validation (core only, ~30 seconds)
+python scripts/smoke_test.py --core-only
+
+# Skip optional tests (infrastructure, advanced)
+python scripts/smoke_test.py --skip-optional
+
+# Test specific groups
+python scripts/smoke_test.py --group core
+python scripts/smoke_test.py --group deep-rl
+python scripts/smoke_test.py --group infrastructure
+python scripts/smoke_test.py --group advanced
+
+# Verbose output for debugging
+python scripts/smoke_test.py --verbose
+```
+
 - When possible, verify changes across CPU, CUDA, and ROCm configurations—Docker images help here.
 
 ### Performance Tips
@@ -324,14 +529,45 @@ requirements/
 If a script requires PyTorch and it's missing, it exits with clear guidance.
 
 ## 12. Testing & Fast Validation
-Smoke test:
+
+### Comprehensive Smoke Tests
+The project includes an intelligent test suite organized by dependency requirements:
+
 ```bash
+# Run all tests (4 groups: core, deep-rl, infrastructure, advanced)
 python scripts/smoke_test.py
+
+# Quick test - core examples only (no PyTorch, ~30 seconds)
+python scripts/smoke_test.py --core-only
+
+# Skip optional tests (faster CI/CD)
+python scripts/smoke_test.py --skip-optional
+
+# Test specific groups
+python scripts/smoke_test.py --group core           # NumPy-based examples
+python scripts/smoke_test.py --group deep-rl        # PyTorch-based RL
+python scripts/smoke_test.py --group infrastructure # GPU, distributed, tracking
+python scripts/smoke_test.py --group advanced       # Offline RL, RLHF, Dreamer
+
+# Verbose output for debugging
+python scripts/smoke_test.py --verbose
 ```
-Quick algorithm sanity runs:
+
+**Test Groups:**
+- **Core Examples**: Multi-armed bandits, tabular RL (no PyTorch required)
+- **Deep RL Examples**: DQN, PPO, TD3, SAC, TRPO (requires PyTorch)
+- **Infrastructure**: GPU optimization, Ray RLlib, Optuna (optional dependencies)
+- **Advanced Algorithms**: CQL, IQL, Dreamer, RLHF (cutting-edge research)
+
+### Quick Algorithm Validation
 ```bash
-python modules/module_04_actor_critic/examples/a2c_lunarlander.py --episodes 5
-python modules/module_05_advanced_rl/examples/evolutionary_cartpole.py --generations 1 --population 8
+# Test Phase 1: Core algorithms (2 minutes each)
+python modules/module_04_actor_critic/examples/ppo_cartpole.py --episodes 5
+python modules/module_04_actor_critic/examples/td3_pendulum.py --episodes 5
+
+# Test Phase 3: Advanced algorithms (1 minute each)
+python modules/module_07_operationalization/examples/cql_offline_rl.py --mode generate --dataset-size 1000
+python modules/module_07_operationalization/examples/benchmark_suite.py --trials 1 --episodes 2
 ```
 
 ## 13. Troubleshooting
@@ -367,8 +603,9 @@ Principles:
 - ✅ Add Rainbow Atari example
 - ✅ Add policy gradient examples (REINFORCE, Pendulum)
 - ✅ Add A2C and SAC examples
+- ✅ **Add industry-standard algorithms (PPO, TD3, TRPO)** ⭐ **Phase 1 Complete**
 - ✅ Add advanced topics (curiosity, multi-agent)
-- ✅ Add operationalization examples (TorchServe, K8s, Offline RL)
+- ✅ **Add cutting-edge algorithms (CQL, IQL, Dreamer, RLHF)** ⭐ **Phase 3 Complete**
 
 #### Infrastructure & Setup
 - ✅ Modular requirements structure (base, CPU, CUDA, ROCm)
@@ -377,6 +614,11 @@ Principles:
 - ✅ Enhanced docker-compose.yml with pip caching and proper GPU configs
 - ✅ Comprehensive setup documentation (`SETUP.md`)
 - ✅ Updated `CONTRIBUTING.md` with development guidelines
+- ✅ **Intelligent smoke test suite with dependency-based grouping** ⭐ **Phase 2 Complete**
+- ✅ **GPU optimization (vectorized envs, mixed precision)** ⭐ **Phase 2 Complete**
+- ✅ **Distributed training (Ray RLlib)** ⭐ **Phase 2 Complete**
+- ✅ **Hyperparameter tuning (Optuna)** ⭐ **Phase 2 Complete**
+- ✅ **TensorBoard integration** ⭐ **Phase 2 Complete**
 
 ### In Progress 🔨
 - Docker multi-platform builds (ARM64 support)
@@ -386,8 +628,11 @@ Principles:
 ### Future Enhancements 🚀
 
 #### Algorithms
-- Add more advanced algorithms (PPO, TRPO, TD3)
-- Model-based RL examples (Dreamer, MuZero)
+- ~~Add more advanced algorithms (PPO, TRPO, TD3)~~ ✅ **DONE (Phase 1)**
+- ~~Model-based RL examples (Dreamer)~~ ✅ **DONE (Phase 3)**
+- ~~Offline RL (CQL, IQL)~~ ✅ **DONE (Phase 3)**
+- ~~RLHF for LLMs~~ ✅ **DONE (Phase 3)**
+- MuZero implementation
 - Meta-RL and few-shot learning examples
 - Hierarchical RL implementations
 
@@ -405,11 +650,12 @@ Principles:
 
 #### Tools & Infrastructure
 - Enhanced visualization and debugging tools
-- Integration with popular RL frameworks (Stable-Baselines3, Ray RLlib)
-- Performance benchmarking suite
-- Hyperparameter optimization examples (Optuna, Ray Tune)
-- Distributed training examples
+- ~~Integration with popular RL frameworks (Ray RLlib)~~ ✅ **DONE (Phase 2)**
+- ~~Performance benchmarking suite~~ ✅ **DONE (Phase 3)**
+- ~~Hyperparameter optimization examples (Optuna, Ray Tune)~~ ✅ **DONE (Phase 2)**
+- ~~Distributed training examples~~ ✅ **DONE (Phase 2)**
 - Cloud deployment guides (AWS, GCP, Azure)
+- Kubernetes production deployment examples
 
 #### Documentation & Learning
 - Interactive tutorials and exercises

@@ -128,14 +128,48 @@ where `H(π(·|s))` is the entropy of the policy.
 - **Discrete actions with large replay buffer**: DQN might be simpler
 - **Very sample-limited**: Model-based methods might be better
 ## 📋 Run the Examples
-A2C (requires PyTorch and Box2D; use Docker or install Box2D locally):
+
+### Discrete Action Spaces
+
+**A2C (Advantage Actor-Critic)** - Basic actor-critic (requires Box2D):
 ```bash
-python modules/module_04_actor_critic/examples/a2c_lunarlander.py --episodes 1000 --seed 0
+python modules/module_04_actor_critic/examples/a2c_lunarlander.py --episodes 1000 --lr 3e-4 --seed 0
 ```
-SAC (stub with SB3/PyBullet notes):
+
+**PPO (Proximal Policy Optimization)** ⭐ **Industry Standard** - Production-ready on-policy algorithm:
 ```bash
-python modules/module_04_actor_critic/examples/sac_robotic_arm.py --env ReacherBulletEnv-v0
+# Beginner-friendly version on CartPole (fast training ~2 min)
+python modules/module_04_actor_critic/examples/ppo_cartpole.py --episodes 100 --clip-eps 0.2
+
+# Production version on LunarLander (requires Box2D)
+python modules/module_04_actor_critic/examples/ppo_lunarlander.py --episodes 1000 --clip-eps 0.2 --epochs 4
 ```
+
+**TRPO (Trust Region Policy Optimization)** - Theoretical foundation of PPO:
+```bash
+python modules/module_04_actor_critic/examples/trpo_cartpole.py --episodes 300 --max-kl 0.01
+```
+
+### Continuous Action Spaces
+
+**TD3 (Twin Delayed DDPG)** ⭐ **Industry Standard** - State-of-the-art off-policy:
+```bash
+python modules/module_04_actor_critic/examples/td3_pendulum.py --episodes 200 --policy-delay 2
+```
+
+**SAC (Soft Actor-Critic)** - Maximum entropy RL for continuous control:
+```bash
+python modules/module_04_actor_critic/examples/sac_robotic_arm.py --episodes 300 --learning-rate 3e-4
+```
+
+### Quick Comparison
+| Algorithm | Type | Action Space | Sample Efficiency | Stability | Industry Use |
+|-----------|------|--------------|-------------------|-----------|--------------|
+| A2C | On-policy | Discrete/Continuous | Medium | High | Moderate |
+| **PPO** | On-policy | Discrete/Continuous | Medium | **Very High** | **Very High** |
+| TRPO | On-policy | Discrete/Continuous | Medium | High | Low (PPO preferred) |
+| **TD3** | Off-policy | Continuous | **High** | High | **High** |
+| SAC | Off-policy | Continuous | **Very High** | High | High |
 
 ## 🔬 Exercises
 1. **Hyperparameter tuning**: Tune `--gamma`, `--gae-lambda`, `--entropy-beta`, `--lr`
