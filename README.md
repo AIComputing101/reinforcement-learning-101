@@ -21,16 +21,18 @@ An opinionated, end‑to‑end tutorial project for learning Reinforcement Learn
 6. [Project Layout](#6-project-layout)
 7. [Running Examples](#7-running-examples-more-highlights)
 8. [Environment & Reproducibility](#8-environment--reproducibility)
-9. [GPU & Docker](#9-gpu--docker)
-10. [Dependencies](#10-dependencies)
-11. [Testing & Fast Validation](#11-testing--fast-validation)
-12. [Troubleshooting](#12-troubleshooting)
-13. [Extending the Project](#13-extending-the-project)
-14. [Contributing](#14-contributing)
-15. [Roadmap Snapshot](#15-roadmap-snapshot)
-16. [License](#16-license)
-17. [Citation](#17-citation-optional)
-18. [FAQ](#18-faq)
+9. [Best Practices](#9-best-practices)
+10. [GPU & Docker](#10-gpu--docker)
+11. [Dependencies](#11-dependencies)
+12. [Testing & Fast Validation](#12-testing--fast-validation)
+13. [Troubleshooting](#13-troubleshooting)
+14. [Extending the Project](#14-extending-the-project)
+15. [Contributing](#15-contributing)
+16. [Roadmap](#16-roadmap)
+17. [References](#17-references)
+18. [License](#18-license)
+19. [Citation (Optional)](#19-citation-optional)
+20. [FAQ](#20-faq)
 
 ---
 
@@ -119,7 +121,6 @@ Each module folder includes `content.md` (theory + checklist) and an `examples/`
 modules/                # Module theory + examples (core learning path)
 docker/                 # Dockerfiles, docker-compose.yml, run scripts
 scripts/                # Smoke tests & utilities
-docs/                   # Roadmap, references, best practices
 requirements/           # Modular requirements (base, CPU, CUDA, ROCm)
 setup.sh               # Smart setup script with GPU auto-detection
 SETUP.md               # Comprehensive setup guide
@@ -162,14 +163,104 @@ Set seeds (many scripts expose `--seed`):
 ```bash
 python modules/module_02_value_methods/examples/dqn_cartpole.py --episodes 50 --seed 42
 ```
-Design tenets (see `docs/best_practices.md`):
+Design tenets (consolidated below in [Best Practices](#9-best-practices)):
 * Deterministic where feasible (seeding PyTorch, NumPy, env wrappers)
 * Structured logging with `rich` for human scan + copy/paste
 * Explicit CLI flags over hidden config files
 * Separate environment creation from learning logic
 * Incremental complexity; minimal runnable baseline first
 
-## 9. GPU & Docker
+## 9. Best Practices
+
+Guidelines distilled from maintaining RL101 in production-like environments.
+
+### Development Environment
+
+- **Use `setup.sh`** for automated provisioning with GPU auto-detection.
+- **Prefer `.venv`** when working natively to isolate dependencies.
+- **Containerize for consistency** using the curated Dockerfiles when collaborating or deploying.
+- **Install modular requirements**: start with `requirements-base.txt`, then add the PyTorch variant that matches your hardware.
+
+```bash
+# Base dependencies (always needed)
+pip install -r requirements/requirements-base.txt
+
+# Choose a PyTorch flavor
+pip install -r requirements/requirements-torch-cpu.txt   # CPU-only
+pip install -r requirements/requirements-torch-cuda.txt  # NVIDIA GPU
+pip install -r requirements/requirements-torch-rocm.txt  # AMD GPU
+```
+
+### Code Quality
+
+**Reproducibility**
+
+- Seed NumPy, PyTorch, and Gymnasium environments whenever deterministic comparisons matter.
+- Expose a `--seed` flag on new scripts; document stochastic behavior when determinism is infeasible.
+
+**Logging & Output**
+
+- Use `rich` for structured console output instead of plain `print`.
+- Capture core metrics (reward, loss, epsilon/temperature, entropy) and surface them per episode.
+- Employ `rich.progress` for long-running loops to track momentum without spamming logs.
+
+**Configuration Management**
+
+- Stick to a CLI-first design with `argparse`.
+- Favor explicit flags over hidden configuration files; ship scripts with sane defaults.
+- Craft comprehensive `--help` text so users can discover knobs quickly.
+
+**Code Organization**
+
+- Separate environment setup, learning logic, and evaluation/serving into distinct functions or modules.
+- Keep functions focused; add type hints where it aids readability.
+- Include top-of-file docstrings that state the goal and show a sample command.
+
+**Dependency Management**
+
+- Guard optional imports and fail gracefully with actionable guidance:
+
+```python
+try:
+    import torch
+except ImportError:
+    console.print("[red]PyTorch required. Install: pip install torch[/red]")
+    sys.exit(1)
+```
+
+**Incremental Complexity**
+
+- Start from a minimal working agent before layering advanced tricks.
+- Add enhancements one at a time, validating behavior (and performance) at each step.
+- Capture the “why” in comments—especially when you diverge from textbook algorithms.
+
+### Testing & Validation
+
+- Ship defaults that finish within minutes so contributors can iterate quickly.
+- Support tiny dry-run parameters (e.g., `--episodes 5`, `--generations 1`).
+- Run `python scripts/smoke_test.py` before commits touching shared code.
+- When possible, verify changes across CPU, CUDA, and ROCm configurations—Docker images help here.
+
+### Performance Tips
+
+**Native Environment**
+
+- Match your dependency footprint to your hardware; CPU-only wheels keep things lean.
+- Isolate work in a virtual environment to dodge global site-packages conflicts.
+
+**Docker Environment**
+
+- Optimize Dockerfiles for layer caching (requirements before code) to speed rebuilds.
+- Mount a pip cache volume when rebuilding frequently.
+- Stick with minimal base images unless you absolutely need a heavier stack.
+
+**Runtime Optimization**
+
+- Profile before prematurely optimizing; use PyTorch/TensorBoard profilers to find hot spots.
+- Prefer vectorized NumPy/PyTorch ops over Python loops.
+- Manage GPU memory proactively (`torch.cuda.empty_cache()`) when experimenting with large models.
+
+## 10. GPU & Docker
 
 ### Docker Setup
 Prefer Docker for reproducible environments and hassle-free GPU support:
@@ -206,7 +297,7 @@ python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
 
 Inside Docker containers, the repo is mounted at `/workspace`. Run scripts directly without additional setup.
 
-## 10. Dependencies
+## 11. Dependencies
 
 ### Requirements Structure
 ```
@@ -232,7 +323,7 @@ requirements/
 
 If a script requires PyTorch and it's missing, it exits with clear guidance.
 
-## 11. Testing & Fast Validation
+## 12. Testing & Fast Validation
 Smoke test:
 ```bash
 python scripts/smoke_test.py
@@ -243,7 +334,7 @@ python modules/module_04_actor_critic/examples/a2c_lunarlander.py --episodes 5
 python modules/module_05_advanced_rl/examples/evolutionary_cartpole.py --generations 1 --population 8
 ```
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 | Symptom | Likely Cause | Fix |
 |---------|--------------|-----|
 | ImportError: torch | Not installed / wrong Python version | `pip install torch` or use Docker |
@@ -251,7 +342,7 @@ python modules/module_05_advanced_rl/examples/evolutionary_cartpole.py --generat
 | Atari env fails | ROM / ALE dependency missing | Install appropriate gymnasium extras; ensure legal ROM acquisition |
 | Non-deterministic returns | Env stochasticity | Set `--seed`, limit parallelism, check gymnasium version |
 
-## 13. Extending the Project
+## 14. Extending the Project
 Add a new example script under the appropriate module's `examples/` and follow existing patterns:
 * Top docstring: purpose + minimal usage
 * `argparse` flags with sane defaults
@@ -259,21 +350,86 @@ Add a new example script under the appropriate module's `examples/` and follow e
 * Clear separation: model definition, experience gathering, update step
 * Log episodic reward + key diagnostics (loss, epsilon, entropy, etc.)
 
-## 14. Contributing
+## 15. Contributing
 See `CONTRIBUTING.md`.
 Principles:
 * Keep runtimes short by default (fast smoke params)
 * Avoid heavy hidden dependencies; guard imports
 * Favor clarity over cleverness—this is a teaching repo
-* Update `docs/roadmap.md` if feature scope changes
+* Log roadmap-impacting ideas via GitHub Issues or Discussions so the community can weigh in
 
-## 15. Roadmap Snapshot
-See `docs/roadmap.md` for full list. Upcoming: PPO / TRPO / TD3, more multi-agent diversity, industry verticals, visualization & benchmarking, integration with SB3 & RLlib.
+## 16. Roadmap
 
-## 16. License
+### Completed ✅
+
+#### Core Algorithms
+- ✅ Expand DQN to Double/Dueling/Prioritized Replay
+- ✅ Add Rainbow Atari example
+- ✅ Add policy gradient examples (REINFORCE, Pendulum)
+- ✅ Add A2C and SAC examples
+- ✅ Add advanced topics (curiosity, multi-agent)
+- ✅ Add operationalization examples (TorchServe, K8s, Offline RL)
+
+#### Infrastructure & Setup
+- ✅ Modular requirements structure (base, CPU, CUDA, ROCm)
+- ✅ Automated setup script with GPU auto-detection (`setup.sh`)
+- ✅ Optimized Dockerfiles (CPU: python:3.11-slim, CUDA/ROCm: official bases)
+- ✅ Enhanced docker-compose.yml with pip caching and proper GPU configs
+- ✅ Comprehensive setup documentation (`SETUP.md`)
+- ✅ Updated `CONTRIBUTING.md` with development guidelines
+
+### In Progress 🔨
+- Docker multi-platform builds (ARM64 support)
+- Automated Docker image publishing to registry
+- Pre-commit hooks for code quality
+
+### Future Enhancements 🚀
+
+#### Algorithms
+- Add more advanced algorithms (PPO, TRPO, TD3)
+- Model-based RL examples (Dreamer, MuZero)
+- Meta-RL and few-shot learning examples
+- Hierarchical RL implementations
+
+#### Multi-Agent & Competition
+- Expand multi-agent scenarios (competitive environments)
+- Self-play implementations
+- Communication protocols in multi-agent systems
+- Tournament and leaderboard systems
+
+#### Industry Applications
+- Add more industry case studies (finance, healthcare, robotics)
+- Real-world deployment patterns
+- A/B testing frameworks for RL policies
+- Cost optimization and budget constraints
+
+#### Tools & Infrastructure
+- Enhanced visualization and debugging tools
+- Integration with popular RL frameworks (Stable-Baselines3, Ray RLlib)
+- Performance benchmarking suite
+- Hyperparameter optimization examples (Optuna, Ray Tune)
+- Distributed training examples
+- Cloud deployment guides (AWS, GCP, Azure)
+
+#### Documentation & Learning
+- Interactive tutorials and exercises
+- Video walkthroughs for each module
+- Jupyter notebook variants (optional, for exploratory learning)
+- Algorithm comparison benchmarks
+- Common pitfalls and debugging guide
+
+## 17. References
+
+- Sutton & Barto: *Reinforcement Learning: An Introduction*
+- OpenAI: *Spinning Up in Deep RL*
+- Gymnasium documentation
+- Stable-Baselines3 documentation
+- CleanRL
+
+## 18. License
 Licensed under the **Apache License, Version 2.0** (see `LICENSE`). You may use, modify, and distribute this project under the terms of that license. Please retain instructional comments where practical to preserve educational value.
 
-## 17. Citation
+## 19. Citation (Optional)
 If this helped your study or project, consider citing:
 ```
 @misc{rl101tutorial,
@@ -285,7 +441,7 @@ If this helped your study or project, consider citing:
 }
 ```
 
-## 18. FAQ
+## 20. FAQ
 Q: Why no notebooks?  
 A: Scripts enforce explicit structure, easier diffing, and production parity. You can still adapt them into notebooks if desired.
 
