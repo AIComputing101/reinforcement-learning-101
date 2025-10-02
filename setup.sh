@@ -55,6 +55,15 @@ setup_native() {
     python_version=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
     print_info "Detected Python ${python_version}"
 
+    python_major=$(echo "${python_version}" | cut -d'.' -f1)
+    python_minor=$(echo "${python_version}" | cut -d'.' -f2)
+
+    if (( python_major > 3 )) || { (( python_major == 3 )) && (( python_minor > 12 )); }; then
+        print_error "Python ${python_version} is not currently supported by official PyTorch wheels."
+        print_info "Please install Python 3.11 or 3.12 and rerun this script, or use './setup.sh docker' for a containerized environment."
+        exit 1
+    fi
+
     # Create virtual environment
     if [ ! -d ".venv" ]; then
         print_info "Creating virtual environment..."

@@ -209,6 +209,7 @@ After setup is complete:
    ```bash
    python scripts/smoke_test.py
    ```
+   The runner reports detected versions of PyTorch, Ray, and Optuna up front, and will gracefully skip optional checks (for example, Box2D-based environments) if those extras aren’t installed. Use `--core-only` or `--skip-optional` for the quickest validation loops.
 
 2. **Try examples:**
    ```bash
@@ -226,4 +227,3 @@ After setup is complete:
 4. **Experiment:**
    - Modify hyperparameters using CLI flags
    - Add `--help` to any example for options
-   - Check `CLAUDE.md` for development guidelines

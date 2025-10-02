@@ -97,6 +97,8 @@ python scripts/smoke_test.py --skip-optional
 python scripts/smoke_test.py --group deep-rl
 ```
 
+The runner now inspects your environment up front: it reports detected versions of PyTorch, Ray, and Optuna, and will automatically skip optional checks that require missing extras (for example, `ppo_lunarlander.py` is skipped if `Box2D` is unavailable). Longer-running jobs such as `sac_robotic_arm.py` live in the optional Infrastructure group—use `--skip-optional` for the fastest required pass.
+
 Run your first bandit:
 ```bash
 python modules/module_01_intro/examples/bandit_epsilon_greedy.py --arms 10 --steps 2000 --epsilon 0.1
@@ -113,7 +115,7 @@ python path/to/script.py --help
 ```
 
 ## 4. Prerequisites
-* Python 3.11+ (minimum supported: 3.11; newer versions generally work—use Docker if ecosystem wheels lag)
+* Python 3.11 or 3.12 (3.13 is not yet supported by official PyTorch wheels—use Docker if you’re on a newer interpreter)
 * Basic linear algebra & probability familiarity
 * Optional GPU (CUDA or ROCm) for heavier experiments
 
@@ -522,9 +524,9 @@ requirements/
 
 ### Python Version Policy
 * **Recommended:** Python 3.11 (best PyTorch wheel availability)
-* **Supported:** 3.11 and later (tested on 3.11 & 3.12)
+* **Supported:** 3.11 and 3.12 (PyTorch wheels available and tested)
 * **Minimum:** 3.11 (earlier versions not supported)
-* **Note:** Python 3.13+ may have limited PyTorch wheels—use Docker for consistent environment
+* **Note:** Python 3.13+ is currently unsupported by PyTorch wheels—use Docker or downgrade your interpreter
 
 If a script requires PyTorch and it's missing, it exits with clear guidance.
 
@@ -556,8 +558,10 @@ python scripts/smoke_test.py --verbose
 **Test Groups:**
 - **Core Examples**: Multi-armed bandits, tabular RL (no PyTorch required)
 - **Deep RL Examples**: DQN, PPO, TD3, SAC, TRPO (requires PyTorch)
-- **Infrastructure**: GPU optimization, Ray RLlib, Optuna (optional dependencies)
+- **Infrastructure**: GPU optimization, Ray RLlib, Optuna (optional dependencies; includes the slower `sac_robotic_arm.py` quick-run variant)
 - **Advanced Algorithms**: CQL, IQL, Dreamer, RLHF (cutting-edge research)
+
+When you launch the suite it announces which optional dependencies are available (PyTorch, Ray, Optuna) and marks missing ones clearly. Tests that depend on unavailable extras are counted as skipped rather than failed, so you can still get a green run on slim environments. Box2D-driven workloads (e.g., `ppo_lunarlander.py`) auto-skip when `Box2D` isn’t installed, keeping core validation snappy.
 
 ### Quick Algorithm Validation
 ```bash

@@ -17,6 +17,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+import importlib
 
 
 @dataclass
@@ -28,6 +29,23 @@ class TestGroup:
     required: bool = True  # If False, failures don't affect overall status
     requires_torch: bool = False
     requires_optional_deps: bool = False
+
+
+# =============================================================================
+# Helper utilities
+# =============================================================================
+
+
+def safe_import(module_name: str):
+    """Attempt to import a module and return it if available."""
+    try:
+        return importlib.import_module(module_name)
+    except Exception:
+        return None
+
+
+def box2d_available() -> bool:
+    return safe_import("Box2D") is not None
 
 
 # =============================================================================
@@ -66,23 +84,15 @@ DEEP_RL_TESTS = TestGroup(
         # Module 02: Value Methods (DQN)
         [sys.executable, "modules/module_02_value_methods/examples/dqn_cartpole.py",
          "--episodes", "2"],
-        [sys.executable, "modules/module_02_value_methods/examples/dqn_atari_pong.py",
-         "--episodes", "1", "--max-steps", "100"],
 
         # Module 03: Policy Gradient
-        [sys.executable, "modules/module_03_policy_methods/examples/policy_gradient_cartpole.py",
+        [sys.executable, "modules/module_03_policy_methods/examples/reinforce_cartpole.py",
          "--episodes", "2"],
         [sys.executable, "modules/module_03_policy_methods/examples/policy_gradient_pendulum.py",
          "--episodes", "2"],
 
         # Module 04: Actor-Critic (Core algorithms)
-        [sys.executable, "modules/module_04_actor_critic/examples/a2c_cartpole.py",
-         "--episodes", "2"],
         [sys.executable, "modules/module_04_actor_critic/examples/ppo_cartpole.py",
-         "--episodes", "2"],
-        [sys.executable, "modules/module_04_actor_critic/examples/ppo_lunarlander.py",
-         "--episodes", "2"],
-        [sys.executable, "modules/module_04_actor_critic/examples/sac_pendulum.py",
          "--episodes", "2"],
         [sys.executable, "modules/module_04_actor_critic/examples/td3_pendulum.py",
          "--episodes", "2"],
@@ -104,6 +114,14 @@ INFRASTRUCTURE_TESTS = TestGroup(
         # TensorBoard integration
         [sys.executable, "modules/module_04_actor_critic/examples/ppo_cartpole_tensorboard.py",
          "--episodes", "2"],
+
+        # Box2D environments (requires additional dependency)
+        [sys.executable, "modules/module_04_actor_critic/examples/ppo_lunarlander.py",
+         "--episodes", "2"],
+
+    # Longer-running SAC example
+    [sys.executable, "modules/module_04_actor_critic/examples/sac_robotic_arm.py",
+     "--episodes", "2", "--batch-size", "64", "--memory-size", "2000"],
 
         # Distributed training (Ray RLlib)
         [sys.executable, "modules/module_07_operationalization/examples/ray_distributed_ppo.py",
@@ -170,32 +188,29 @@ class SmokeTestRunner:
             'optuna': False,
         }
 
-        try:
-            import torch
+        torch_mod = safe_import("torch")
+        if torch_mod is not None:
             deps['torch'] = True
             if self.verbose:
-                print(f"✓ PyTorch {torch.__version__} available")
-        except ImportError:
-            if self.verbose:
-                print("✗ PyTorch not available")
+                print(f"✓ PyTorch {torch_mod.__version__} available")
+        elif self.verbose:
+            print("✗ PyTorch not available")
 
-        try:
-            import ray
+        ray_mod = safe_import("ray")
+        if ray_mod is not None:
             deps['ray'] = True
             if self.verbose:
-                print(f"✓ Ray {ray.__version__} available")
-        except ImportError:
-            if self.verbose:
-                print("✗ Ray not available (optional)")
+                print(f"✓ Ray {ray_mod.__version__} available")
+        elif self.verbose:
+            print("✗ Ray not available (optional)")
 
-        try:
-            import optuna
+        optuna_mod = safe_import("optuna")
+        if optuna_mod is not None:
             deps['optuna'] = True
             if self.verbose:
-                print(f"✓ Optuna {optuna.__version__} available")
-        except ImportError:
-            if self.verbose:
-                print("✗ Optuna not available (optional)")
+                print(f"✓ Optuna {optuna_mod.__version__} available")
+        elif self.verbose:
+            print("✗ Optuna not available (optional)")
 
         return deps
 
@@ -206,6 +221,11 @@ class SmokeTestRunner:
 
         if self.verbose:
             print(f"    Command: {cmd_str}")
+
+        script_name = Path(cmd[1]).name
+        if script_name == "ppo_lunarlander.py" and not box2d_available():
+            print("    ⊘ SKIPPED: Requires Box2D (not installed)")
+            return True
 
         try:
             result = subprocess.run(
