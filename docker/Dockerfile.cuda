@@ -1,15 +1,31 @@
 # CUDA-enabled container for DRL
-FROM pytorch/pytorch:2.7.0-cuda12.8-cudnn9-runtime
+FROM pytorch/pytorch:2.8.0-cuda12.9-cudnn9-devel
 
 WORKDIR /workspace
 
-# System deps (minimal)
+# System dependencies (minimal + OpenCV for rendering)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    python3-opencv \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /workspace/requirements.txt
-RUN pip install --no-cache-dir -r /workspace/requirements.txt
+# Copy requirements files
+COPY requirements/requirements-base.txt /workspace/requirements-base.txt
+
+# Copy project code needed for running examples and scripts
+COPY modules/ /workspace/modules/
+COPY scripts/ /workspace/scripts/
+
+# Install base dependencies (PyTorch already in base image)
+RUN pip install --no-cache-dir -r requirements-base.txt
+
+# Set environment for better CUDA performance
+ENV PYTHONUNBUFFERED=1
+ENV CUDA_LAUNCH_BLOCKING=0
 
 CMD ["bash"]

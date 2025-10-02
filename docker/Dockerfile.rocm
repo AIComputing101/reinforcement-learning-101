@@ -1,16 +1,32 @@
-# ROCm-enabled container for DRL
+# ROCm-enabled container for DRL (AMD GPUs)
 FROM rocm/pytorch:latest
 
 WORKDIR /workspace
 
+# System dependencies (minimal + OpenCV for rendering)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    python3-opencv \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /workspace/requirements.txt
-RUN pip install --no-cache-dir -r /workspace/requirements.txt
+# Copy requirements files
+COPY requirements/requirements-base.txt /workspace/requirements-base.txt
 
+# Copy project code needed for running examples and scripts
+COPY modules/ /workspace/modules/
+COPY scripts/ /workspace/scripts/
+
+# Install base dependencies (PyTorch already in base image)
+RUN pip install --no-cache-dir -r requirements-base.txt
+
+# ROCm environment variables
+# HSA_OVERRIDE_GFX_VERSION: Compatibility for older AMD GPUs (adjust as needed)
 ENV HSA_OVERRIDE_GFX_VERSION=10.3.0
+ENV PYTHONUNBUFFERED=1
 
 CMD ["bash"]

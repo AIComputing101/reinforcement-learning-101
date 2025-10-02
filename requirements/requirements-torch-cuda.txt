@@ -1,0 +1,6 @@
+# PyTorch CUDA installation
+# For NVIDIA GPUs with CUDA 12.x support
+
+torch>=2.3
+torchvision>=0.18
+torchaudio>=2.3

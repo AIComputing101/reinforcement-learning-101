@@ -1,0 +1,14 @@
+# Core runtime dependencies (no PyTorch)
+# These are needed for all environments (CPU, CUDA, ROCm)
+
+# Numerical computing
+numpy>=1.24,<2.0
+
+# CLI formatting and logging
+rich>=13.7
+
+# Reinforcement learning environments
+gymnasium[classic-control]>=1.0
+
+# Optional: Logging and metrics
+tensorboard>=2.16

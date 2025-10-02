@@ -54,14 +54,29 @@ By completing all 7 modules you will be able to:
 * Package, serve, and batch‑evaluate trained agents (TorchServe, Offline RL, Kubernetes jobs).
 
 ## 3. Quick Start
-Environment setup (CPU):
+
+### Automated Setup (Recommended)
+One command with GPU auto-detection:
+```bash
+./setup.sh
+```
+
+Or choose your backend directly:
+```bash
+./setup.sh native          # Native Python (auto-detect GPU)
+./setup.sh docker cuda     # Docker with NVIDIA GPU
+./setup.sh native cpu      # CPU-only native setup
+```
+
+### Manual Setup (CPU)
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements/requirements-base.txt
+pip install -r requirements/requirements-torch-cpu.txt
 ```
 
-Smoke test (verifies lightweight imports; skips deep RL if torch missing):
+**Verify installation:**
 ```bash
 python scripts/smoke_test.py
 ```
@@ -102,10 +117,12 @@ Each module folder includes `content.md` (theory + checklist) and an `examples/`
 ## 6. Project Layout
 ```
 modules/                # Module theory + examples (core learning path)
-docker/                 # Container definitions & unified run script
+docker/                 # Dockerfiles, docker-compose.yml, run scripts
 scripts/                # Smoke tests & utilities
 docs/                   # Roadmap, references, best practices
-requirements.txt        # Base + optional extras guarded in code
+requirements/           # Modular requirements (base, CPU, CUDA, ROCm)
+setup.sh               # Smart setup script with GPU auto-detection
+SETUP.md               # Comprehensive setup guide
 ```
 
 ## 7. Running Examples (More Highlights)
@@ -153,30 +170,67 @@ Design tenets (see `docs/best_practices.md`):
 * Incremental complexity; minimal runnable baseline first
 
 ## 9. GPU & Docker
-Prefer Docker for reproducible stacks (and Python 3.13 + PyTorch combos):
+
+### Docker Setup
+Prefer Docker for reproducible environments and hassle-free GPU support:
+
 ```bash
-bash docker/run.sh cpu     # CPU baseline
-bash docker/run.sh cuda    # NVIDIA (CUDA 12.8, PyTorch 2.x)
-bash docker/run.sh rocm    # AMD (ROCm 6.x)
+# Automated (auto-detects GPU)
+./setup.sh docker
+
+# Manual selection
+bash docker/run.sh cpu     # CPU-only (lightweight ~500MB)
+bash docker/run.sh cuda    # NVIDIA CUDA 12.9 + PyTorch 2.8
+bash docker/run.sh rocm    # AMD ROCm 6.x + PyTorch
 ```
-Inside the container the repo is mounted; activate environment (if needed) and run scripts exactly as shown.
+
+### Native GPU Setup
+For native installations with GPU support:
+
+**NVIDIA CUDA:**
+```bash
+pip install -r requirements/requirements-base.txt
+pip install -r requirements/requirements-torch-cuda.txt
+```
+
+**AMD ROCm:**
+```bash
+pip install -r requirements/requirements-base.txt
+pip install -r requirements/requirements-torch-rocm.txt
+```
+
+**Verify GPU:**
+```bash
+python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+```
+
+Inside Docker containers, the repo is mounted at `/workspace`. Run scripts directly without additional setup.
 
 ## 10. Dependencies
-Core (always installed): `numpy`, `rich`, `gymnasium[classic-control]`
 
-Optional (guarded at import): `torch` (deep RL), `tensorboard` (metrics)
-
-Install deep RL extras:
-```bash
-pip install torch tensorboard
+### Requirements Structure
+```
+requirements/
+├── requirements-base.txt        # Core: NumPy, Rich, Gymnasium, TensorBoard
+├── requirements-torch-cpu.txt   # PyTorch CPU-only (~500MB)
+├── requirements-torch-cuda.txt  # PyTorch with CUDA support
+└── requirements-torch-rocm.txt  # PyTorch with ROCm (AMD GPU)
 ```
 
-Python version policy:
-* Supported: 3.11 and later (tested regularly on 3.11 & 3.12)
-* Minimum: 3.11 (earlier versions not supported)
-* Note: If a newly released Python version lacks some dependency wheels (e.g., early PyTorch support), prefer the provided Docker images until upstream packages catch up.
+**Core (always installed):** `numpy>=1.24`, `rich>=13.7`, `gymnasium[classic-control]>=1.0`, `tensorboard>=2.16`
 
-If a script requires PyTorch and it's missing, it exits with a clear guidance message.
+**PyTorch (choose one):**
+- CPU-only: Lightweight, works everywhere
+- CUDA: NVIDIA GPUs (requires CUDA 12.x drivers)
+- ROCm: AMD GPUs (requires ROCm 6.x drivers)
+
+### Python Version Policy
+* **Recommended:** Python 3.11 (best PyTorch wheel availability)
+* **Supported:** 3.11 and later (tested on 3.11 & 3.12)
+* **Minimum:** 3.11 (earlier versions not supported)
+* **Note:** Python 3.13+ may have limited PyTorch wheels—use Docker for consistent environment
+
+If a script requires PyTorch and it's missing, it exits with clear guidance.
 
 ## 11. Testing & Fast Validation
 Smoke test:

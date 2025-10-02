@@ -1,0 +1,7 @@
+# PyTorch ROCm installation
+# For AMD GPUs with ROCm 6.x support
+
+--index-url https://download.pytorch.org/whl/rocm6.2
+torch>=2.3
+torchvision>=0.18
+torchaudio>=2.3
