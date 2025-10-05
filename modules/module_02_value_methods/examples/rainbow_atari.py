@@ -8,7 +8,7 @@ and Noisy Networks) for Atari games. This is an educational implementation
 showcasing advanced deep RL techniques.
 
 Usage:
-    python rainbow_atari.py --game PongNoFrameskip-v4 --episodes 100 --lr 1e-4
+    python rainbow_atari.py --game PongNoFrameskip-v4 --episodes 100 --learning-rate 1e-4
 """
 from __future__ import annotations
 import argparse

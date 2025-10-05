@@ -11,7 +11,7 @@ Scenario:
 Focus: Demonstrate non-stationarity & coordination with minimal code.
 
 Run:
-  python modules/module_05_advanced_rl/examples/multiagent_gridworld.py --episodes 200
+  python multiagent_gridworld.py --episodes 200
 
 Dependencies: only NumPy + rich.
 """

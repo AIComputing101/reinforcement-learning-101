@@ -344,7 +344,7 @@ def imagine_rollouts(world_model, actor_critic, start_obs, cfg, num_trajectories
 
 def train_actor_critic(actor_critic, imagined_data, optimizer, cfg):
     """Train actor-critic on imagined trajectories."""
-    rewards = torch.stack(imagined_data["rewards"]).cpu().numpy()
+    rewards = torch.stack(imagined_data["rewards"]).detach().cpu().numpy()
     values = torch.stack(imagined_data["values"]).detach().cpu().numpy()
     log_probs = torch.stack(imagined_data["log_probs"])
 
