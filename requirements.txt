@@ -4,6 +4,7 @@ rich>=13.7
 
 # Environments
 gymnasium[classic-control]>=1.0
+box2d-py>=2.3.8
 
 # Deep learning (CPU by default; CUDA/ROCm handled in Dockerfiles)
 # Note: PyTorch wheels for Python 3.13 may not be available on PyPI yet.

@@ -113,6 +113,11 @@ class PolicyNetwork(nn.Module):
         """Generate text given a prompt."""
         device = next(self.parameters()).device
         tokens = [ord(c) for c in prompt]
+        original_prompt_len = len(tokens)
+        
+        # Handle empty prompts by adding a start token (space)
+        if not tokens:
+            tokens = [ord(' ')]
         hidden = None
 
         for _ in range(max_length - len(prompt)):
@@ -129,7 +134,9 @@ class PolicyNetwork(nn.Module):
             if next_token in [0, ord('\n')]:
                 break
 
-        return ''.join([chr(min(max(t, 0), 127)) for t in tokens])
+        # For empty prompts, skip the artificial start token
+        start_idx = 1 if original_prompt_len == 0 else 0
+        return ''.join([chr(min(max(t, 0), 127)) for t in tokens[start_idx:]])
 
 
 class ValueNetwork(nn.Module):
@@ -381,6 +388,12 @@ def train_rlhf_ppo(policy: PolicyNetwork, value_net: ValueNetwork, reward_model:
 
         for prompt in batch_prompts:
             tokens = [ord(c) for c in prompt]
+            original_prompt_len = len(tokens)
+            
+            # Handle empty prompts by adding a start token (space)
+            if not tokens:
+                tokens = [ord(' ')]
+            
             log_probs = []
             ref_log_probs = []
 
@@ -411,7 +424,9 @@ def train_rlhf_ppo(policy: PolicyNetwork, value_net: ValueNetwork, reward_model:
                 if action.item() == 0:  # Stop token
                     break
 
-            generated_texts.append(''.join([chr(min(max(t, 0), 127)) for t in tokens]))
+            # For empty prompts, skip the artificial start token in generated text
+            start_idx = 1 if original_prompt_len == 0 else 0
+            generated_texts.append(''.join([chr(min(max(t, 0), 127)) for t in tokens[start_idx:]]))
             token_seqs.append(tokens + [0] * (cfg.max_length - len(tokens)))
             log_probs_list.append(torch.stack(log_probs) if log_probs else torch.zeros(1).to(cfg.device))
             ref_log_probs_list.append(torch.stack(ref_log_probs) if ref_log_probs else torch.zeros(1).to(cfg.device))

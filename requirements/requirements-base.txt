@@ -9,6 +9,7 @@ rich>=13.7
 
 # Reinforcement learning environments
 gymnasium[classic-control]>=1.0
+box2d-py>=2.3.8
 
 # Optional: Logging and metrics
 tensorboard>=2.16

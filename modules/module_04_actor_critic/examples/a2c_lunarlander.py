@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-A2C (Advantage Actor Critic) on LunarLander-v2 using PyTorch.
+A2C (Advantage Actor Critic) on LunarLander-v3 using PyTorch.
 
 Note: LunarLander requires Box2D. If not installed, this script will exit with instructions.
 
@@ -91,7 +91,7 @@ def train(cfg: Config):
         np.random.seed(cfg.seed)
         torch.manual_seed(cfg.seed)
 
-    env = gym.make("LunarLander-v2")
+    env = gym.make("LunarLander-v3")
     obs_dim = env.observation_space.shape[0]
     action_dim = env.action_space.n
 

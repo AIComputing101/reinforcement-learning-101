@@ -3,10 +3,11 @@ FROM rocm/pytorch:latest
 
 WORKDIR /workspace
 
-# System dependencies (minimal + OpenCV for rendering)
+# System dependencies (minimal + OpenCV for rendering + SWIG for Box2D)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
+    swig \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
