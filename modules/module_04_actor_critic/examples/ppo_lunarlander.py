@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PPO (Proximal Policy Optimization) on LunarLander-v2 using PyTorch.
+PPO (Proximal Policy Optimization) on LunarLander-v3 using PyTorch.
 
 PPO is the industry-standard on-policy RL algorithm (2024-2025), used in:
 - OpenAI's RLHF for ChatGPT
@@ -275,7 +275,7 @@ def train(cfg: Config):
         np.random.seed(cfg.seed)
         torch.manual_seed(cfg.seed)
 
-    env = gym.make("LunarLander-v2")
+    env = gym.make("LunarLander-v3")
     obs_dim = env.observation_space.shape[0]
     action_dim = env.action_space.n
 
@@ -336,7 +336,7 @@ def train(cfg: Config):
 
 
 def parse_args() -> Config:
-    p = argparse.ArgumentParser(description="PPO on LunarLander-v2")
+    p = argparse.ArgumentParser(description="PPO on LunarLander-v3")
     p.add_argument("--episodes", type=int, default=1000, help="Number of episodes")
     p.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     p.add_argument("--gamma", type=float, default=0.99, help="Discount factor")

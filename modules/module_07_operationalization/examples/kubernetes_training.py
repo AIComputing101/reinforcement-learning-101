@@ -68,7 +68,7 @@ class KubernetesManager:
                 cpu_cores=8,
                 memory_gb=32,
                 algorithm="ppo",
-                environment="LunarLander-v2",
+                environment="LunarLander-v3",
                 episodes=5000,
                 learning_rate=3e-4,
                 image="rl-training:cuda",
