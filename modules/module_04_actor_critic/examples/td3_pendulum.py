@@ -12,7 +12,7 @@ Key features:
 - Deterministic policy with exploration noise
 
 Example:
-  python td3_pendulum.py --episodes 200 --lr 3e-4 --buffer-size 100000 --batch-size 256
+  python td3_pendulum.py --episodes 200 --lr-actor 3e-4 --lr-critic 3e-4 --buffer-size 100000 --batch-size 256
 
 Reference:
   Fujimoto et al. (2018) "Addressing Function Approximation Error in Actor-Critic Methods"

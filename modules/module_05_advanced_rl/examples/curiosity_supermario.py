@@ -8,7 +8,7 @@ complex environments with sparse rewards by generating intrinsic rewards based
 on prediction errors.
 
 Usage:
-    python curiosity_supermario.py --episodes 100 --curiosity-weight 0.1 --lr 3e-4
+    python curiosity_supermario.py --episodes 100 --curiosity-weight 0.1 --learning-rate 3e-4
 """
 from __future__ import annotations
 import argparse
@@ -333,8 +333,8 @@ class CuriosityAgent:
 
     def calculate_intrinsic_reward(self, state, action, next_state):
         """Calculate intrinsic reward using forward model prediction error."""
-        state_tensor = torch.FloatTensor([state]).to(self.device)
-        next_state_tensor = torch.FloatTensor([next_state]).to(self.device)
+        state_tensor = torch.FloatTensor(np.array([state])).to(self.device)
+        next_state_tensor = torch.FloatTensor(np.array([next_state])).to(self.device)
         action_tensor = torch.LongTensor([action]).to(self.device)
 
         with torch.no_grad():
@@ -355,11 +355,11 @@ class CuriosityAgent:
 
         # Sample batch
         batch = random.sample(self.memory, self.batch_size)
-        states = torch.FloatTensor([e[0] for e in batch]).to(self.device)
+        states = torch.FloatTensor(np.array([e[0] for e in batch])).to(self.device)
         actions = torch.LongTensor([e[1] for e in batch]).to(self.device)
         rewards = torch.FloatTensor([e[2] for e in batch]).to(self.device)
-        next_states = torch.FloatTensor([e[3] for e in batch]).to(self.device)
-        dones = torch.BoolTensor([e[4] for e in batch]).to(self.device)
+        next_states = torch.FloatTensor(np.array([e[3] for e in batch])).to(self.device)
+        dones = torch.BoolTensor([bool(e[4]) for e in batch]).to(self.device)
 
         # Calculate intrinsic rewards
         intrinsic_rewards = torch.zeros(self.batch_size).to(self.device)

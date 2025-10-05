@@ -121,7 +121,7 @@ class PolicyNetwork(nn.Module):
         hidden = None
 
         for _ in range(max_length - len(prompt)):
-            x = torch.LongTensor([tokens]).to(device)
+            x = torch.LongTensor(np.array([tokens])).to(device)
             with torch.no_grad():
                 logits, hidden = self.forward(x, hidden)
                 # Sample from last token distribution
@@ -402,7 +402,7 @@ def train_rlhf_ppo(policy: PolicyNetwork, value_net: ValueNetwork, reward_model:
             ref_hidden = None
 
             for _ in range(cfg.max_length - len(prompt)):
-                x = torch.LongTensor([tokens]).to(cfg.device)
+                x = torch.LongTensor(np.array([tokens])).to(cfg.device)
 
                 # Policy
                 logits, hidden = policy(x, hidden)
