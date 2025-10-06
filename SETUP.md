@@ -215,6 +215,7 @@ After setup is complete:
    ```bash
    # Module 1: Multi-armed bandits
    python modules/module_01_intro/examples/bandit_epsilon_greedy.py
+   python modules/module_01_intro/examples/bandit_ucb.py  # UCB exploration strategy
 
    # Module 2: Deep Q-Learning
    python modules/module_02_value_methods/examples/dqn_cartpole.py

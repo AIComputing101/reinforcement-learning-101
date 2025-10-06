@@ -241,11 +241,17 @@ Learn optimal behavior **without modeling the environment**:
 
 ## 📋 Run the Examples
 ```bash
+# Epsilon-greedy exploration
 python modules/module_01_intro/examples/bandit_epsilon_greedy.py --arms 10 --steps 2000 --epsilon 0.1 --seed 0
+
+# Upper Confidence Bound (UCB) exploration
+python modules/module_01_intro/examples/bandit_ucb.py --arms 10 --steps 2000 --c 2.0 --seed 0
+
+# Ad placement scenario
 python modules/module_01_intro/examples/ad_placement.py --ads 5 --steps 5000 --epsilon 0.1 --seed 42
 ```
 
-Observe: average reward, % optimal‑arm, effect of ε.
+Observe: average reward, % optimal‑arm, effect of ε (epsilon-greedy) vs c (UCB exploration constant).
 
 ## 🔬 Exercises
 1. **Epsilon sweep**: try `--epsilon {0.01,0.1,0.3}`; compare optimal‑arm %.

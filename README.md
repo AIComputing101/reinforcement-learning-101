@@ -1,6 +1,6 @@
 # Reinforcement Learning 101
 
-**Progressive, Hands‑On Reinforcement Learning Project (CLI-First)**  
+**Progressive, Hands‑On Reinforcement Learning Project (CLI-First)**
 Built for clarity, reproducibility, and production awareness.
 
 ![python](https://img.shields.io/badge/python-3.11%20|%203.12-blue)
@@ -10,6 +10,8 @@ Built for clarity, reproducibility, and production awareness.
 
 An opinionated, end‑to‑end tutorial project for learning Reinforcement Learning (RL) from first principles to deployment. **No notebooks.** Everything is an explicit, inspectable Python script you can diff, profile, containerize, and ship.
 
+📊 **[View Visual Diagrams](docs/diagrams/)** | 🎨 **[Algorithm Taxonomy](docs/diagrams/algorithm_taxonomy.png)** | 🗺️ **[Learning Path](docs/diagrams/learning_path.png)**
+
 ---
 
 ## Table of Contents
@@ -18,7 +20,7 @@ An opinionated, end‑to‑end tutorial project for learning Reinforcement Learn
 3. [Quick Start](#3-quick-start)
 4. [Prerequisites](#4-prerequisites)
 5. [Module Path](#5-module-path-progressive-difficulty)
-   - [5.1 Algorithm Selection Guide](#51-algorithm-selection-guide---which-algorithm-should-i-use) ⭐ **NEW**
+   - [5.1 Algorithm Selection Guide](#51-algorithm-selection-guide---which-algorithm-should-i-use) ⭐ 
 6. [Project Layout](#6-project-layout)
 7. [Running Examples](#7-running-examples-more-highlights)
 8. [Environment & Reproducibility](#8-environment--reproducibility)
@@ -122,13 +124,13 @@ python path/to/script.py --help
 ## 5. Module Path (Progressive Difficulty)
 | Module | Theme | Core Topics | Sample Command |
 |--------|-------|------------|----------------|
-| 01 Intro | Bandits | Epsilon-greedy, exploration vs exploitation | `bandit_epsilon_greedy.py --arms 10 --steps 2000` |
+| 01 Intro | Bandits | Epsilon-greedy, UCB, exploration vs exploitation | `bandit_epsilon_greedy.py --arms 10 --steps 2000` |
 | 02 Value Methods | Q / DQN / Rainbow | Replay, target nets, prioritized, distributional | `dqn_cartpole.py --episodes 400` |
 | 03 Policy Methods | REINFORCE / PG | Return estimation, baselines, continuous actions | `policy_gradient_pendulum.py --episodes 100` |
 | 04 Actor-Critic | **PPO** / **TD3** / A2C / SAC / TRPO | Industry-standard algorithms, trust regions | `ppo_cartpole.py --episodes 100` ⭐ |
 | 05 Advanced RL | Evolution, Curiosity, Multi-agent | Exploration bonuses, population search | `evolutionary_cartpole.py --generations 5` |
 | 06 Industry Cases | Applied RL | Energy, bidding, recommendation framing | `realtime_bidding_qlearning.py --episodes 500` |
-| 07 Operationalization | **Offline RL**, **RLHF**, Deployment | CQL, IQL, Dreamer, distributed training, TorchServe | `cql_offline_rl.py --mode compare` ⭐ **NEW** |
+| 07 Operationalization | **Offline RL**, **RLHF**, Deployment | CQL, IQL, Dreamer, distributed training, TorchServe | `cql_offline_rl.py --mode compare` ⭐  |
 
 Each module folder includes `content.md` (theory + checklist) and an `examples/` directory of runnable scripts.
 
@@ -220,19 +222,19 @@ Reinforcement Learning Algorithms
 │       └── SAC ............................ Module 04 ⭐⭐
 │
 ├── Model-Based (Learn environment model)
-│   ├── DreamerV3 .......................... Module 07 ⭐⭐ **NEW**
+│   ├── DreamerV3 .......................... Module 07 ⭐⭐ 
 │   └── MuZero ............................. (Future)
 │
 ├── Offline RL (Learn from fixed datasets)
-│   ├── CQL (Conservative Q-Learning) ...... Module 07 ⭐⭐⭐ **NEW**
-│   ├── IQL (Implicit Q-Learning) .......... Module 07 ⭐⭐⭐ **NEW**
+│   ├── CQL (Conservative Q-Learning) ...... Module 07 ⭐⭐⭐ 
+│   ├── IQL (Implicit Q-Learning) .......... Module 07 ⭐⭐⭐ 
 │   └── Behavioral Cloning ................. Module 07
 │
 └── Exploration & Advanced
     ├── Multi-Armed Bandits ................ Module 01 ⭐ [START HERE]
     ├── Curiosity-Driven ................... Module 05
     ├── Multi-Agent ........................ Module 05
-    └── RLHF (for LLMs) .................... Module 07 ⭐⭐⭐ **NEW**
+    └── RLHF (for LLMs) .................... Module 07 ⭐⭐⭐ 
 
 ⭐ = Beginner-friendly
 ⭐⭐ = Production-ready
@@ -282,6 +284,29 @@ Reinforcement Learning Algorithms
 
 ---
 
+## 5.2. Visual Diagrams
+
+📊 **Comprehensive visual guides available in [`docs/diagrams/`](docs/diagrams/)**
+
+We've created professional diagrams to help you understand the project structure and choose the right algorithms:
+
+### 🎨 Available Visualizations
+
+1. **[Algorithm Taxonomy](docs/diagrams/algorithm_taxonomy.png)** - Complete overview of all 7 modules with algorithms color-coded by category
+2. **[Learning Path](docs/diagrams/learning_path.png)** - Step-by-step progression from beginner to production-ready engineer
+3. **[Algorithm Selection Tree](docs/diagrams/algorithm_selection_tree.png)** - Decision tree to help you choose the right algorithm
+4. **[Project Features Comparison](docs/diagrams/project_features_comparison.png)** - How RL 101 compares to typical tutorials
+5. **[Algorithm Network](docs/diagrams/algorithm_network.png)** - Visual representation of algorithm relationships and dependencies
+
+**Generate diagrams yourself:**
+```bash
+python scripts/generate_project_diagrams.py
+```
+
+See [`docs/diagrams/README.md`](docs/diagrams/README.md) for detailed descriptions and usage guidelines.
+
+---
+
 ## 6. Project Layout
 ```
 modules/                # Module theory + examples (core learning path)
@@ -296,6 +321,7 @@ SETUP.md               # Comprehensive setup guide
 Bandits / Intro (NumPy only):
 ```bash
 python modules/module_01_intro/examples/bandit_epsilon_greedy.py --arms 5 --steps 1000 --epsilon 0.05
+python modules/module_01_intro/examples/bandit_ucb.py --arms 10 --steps 2000 --c 2.0  # UCB exploration
 ```
 
 Value Methods:
